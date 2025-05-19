@@ -1,0 +1,86 @@
+---
+// src/pages/champion/[id].astro
+import { fetchChampions, fetchChampionById } from '../../lib/api';
+
+export async function getStaticPaths() {
+  const champions = await fetchChampions(); // ne passe pas de filtre ici
+
+  console.log("🎯 IDs récupérés pour SSG:", champions.map(c => c.id));
+
+  return champions.map(champion => ({
+    params: { id: champion.id.toString() }
+  }));
+}
+
+
+// Récupération du paramètre d'URL
+const { id } = Astro.params;
+
+// Récupération des données du champion
+const champion = await fetchChampionById(id);
+
+// Gestion des erreurs: redirection si le champion n'existe pas
+if (!champion) {
+  return Astro.redirect('/404');
+}
+
+// Construction de l'URL de l'image avec gestion des URL relatives/absolues
+let imageUrl = null;
+if (champion.image?.url) {
+  imageUrl = champion.image.url.startsWith('/')
+    ? `http://localhost:1337${champion.image.url}`
+    : champion.image.url;
+}
+
+// Texte alternatif pour l'image
+const altText = champion.image?.alternativeText || champion.nom;
+---
+
+<html>
+  <head>
+    <title>{champion.nom} – League of Legends</title>
+    <link rel="stylesheet" href="/src/styles/global.css">
+    <meta charset="UTF-8">
+  </head>
+  <body class="p-4 max-w-5xl mx-auto">
+    <a href="/" class="text-blue-500 hover:underline mb-4 inline-block">&larr; Retour à la liste</a>
+    
+    <div class="bg-white p-6 rounded-lg shadow-lg">
+      <div class="flex flex-col md:flex-row gap-6">
+        {imageUrl && (
+          <div class="w-full md:w-1/3">
+            <img 
+              src={imageUrl} 
+              alt={altText} 
+              class="w-full h-auto rounded-lg shadow"
+            />
+          </div>
+        )}
+        
+        <div class="w-full md:w-2/3">
+          <h1 class="text-3xl font-bold mb-2">{champion.nom}</h1>
+          
+          {champion.roles?.length > 0 && (
+            <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mb-4">
+              {champion.roles[0].nom}
+            </span>
+          )}
+          
+          <div class="prose max-w-none">
+            <h2 class="text-xl font-semibold mt-4">Description</h2>
+            <p class="text-gray-700">{champion.description}</p>
+            
+            <div class="mt-6">
+              <h2 class="text-xl font-semibold">Informations</h2>
+              <ul class="mt-2 space-y-1 text-gray-600">
+                <li><span class="font-medium">ID:</span> {champion.id}</li>
+                <li><span class="font-medium">Ajouté le:</span> {new Date(champion.createdAt).toLocaleDateString()}</li>
+                <li><span class="font-medium">Mis à jour le:</span> {new Date(champion.updatedAt).toLocaleDateString()}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

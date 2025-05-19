@@ -1,0 +1,23 @@
+{
+  "kind": "collectionType",
+  "collectionName": "posts",
+  "info": {
+    "singularName": "post",
+    "pluralName": "posts",
+    "displayName": "Role"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "nom": {
+      "type": "string"
+    },
+    "champions": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::champion.champion",
+      "mappedBy": "roles"
+    }
+  }
+}
