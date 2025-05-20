@@ -181,7 +181,7 @@ Site statique dynamique généré via Astro avec récupération des données dep
    Pour te connecter, utilise les identifiants suivants :
 
    * **Email** : `roulland.thomass@gmail.com`
-   * **Mot de passe** : `Tintin1998!`
+   * **Mot de passe** : `Strapi14000!`
 
 8. **Vérification du content-type "Champion"**
 
