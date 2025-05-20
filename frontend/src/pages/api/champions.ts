@@ -1,71 +1,73 @@
-import { createChampion } from '../../lib/api';
 import type { APIContext } from 'astro';
 
 export async function POST({ request }: APIContext) {
-  console.log("=== API ROUTE APPELÉE ===");
-  console.log("Méthode:", request.method);
-  console.log("URL:", request.url);
-  
   try {
-    const { nom, description, roleId } = await request.json();
-    console.log("Données reçues :", { nom, description, roleId });
-    
-    // Appel à l'API Strapi avec le format correct pour les relations dans v5
-    const response = await fetch('http://localhost:1337/api/champions', {
+    const formData = await request.formData();
+
+    const nom = formData.get('nom')?.toString();
+    const description = formData.get('description')?.toString();
+    const roleId = formData.get('roleId')?.toString();
+    const imageFile = formData.get('image');
+
+    // Vérification des champs requis
+    if (!nom || !description || !roleId) {
+      return new Response(JSON.stringify({ error: 'Champs requis manquants' }), { status: 400 });
+    }
+
+    // Étape 1 : Créer le champion sans l'image
+    const championRes = await fetch('http://localhost:1337/api/champions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         data: {
-          nom: nom,
-          description: description,
-          // Format correct pour connecter une relation par ID dans Strapi v5
+          nom,
+          description,
           roles: {
-            connect: [roleId]
+            connect: [parseInt(roleId)]
           }
-        },
-      }),
+        }
+      })
     });
 
-    if (!response.ok) {
-      console.error(`Erreur HTTP: ${response.status} ${response.statusText}`);
-      try {
-        const errorData = await response.json();
-        console.error("Détails de l'erreur:", errorData);
-        return new Response(JSON.stringify({ 
-          error: 'Erreur lors de la création du champion', 
-          details: errorData 
-        }), { 
-          status: response.status,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      } catch (e) {
-        const errorText = await response.text();
-        console.error("Détails de l'erreur (texte):", errorText);
-        return new Response(JSON.stringify({ 
-          error: 'Erreur lors de la création du champion', 
-          details: errorText 
-        }), { 
-          status: response.status,
-          headers: { 'Content-Type': 'application/json' }
-        });
+    if (!championRes.ok) {
+      const errorData = await championRes.json();
+      console.error("Erreur lors de la création du champion:", errorData);
+      return new Response(JSON.stringify({ error: 'Erreur création champion', details: errorData }), {
+        status: 500
+      });
+    }
+
+    const newChampion = await championRes.json();
+    const championId = newChampion.data.id;
+
+    // Étape 2 : Si une image est fournie, la téléverser et l'associer au champion
+    if (imageFile && imageFile instanceof File) {
+      const uploadForm = new FormData();
+      uploadForm.append('files', imageFile);
+      uploadForm.append('ref', 'api::champion.champion'); // Remplacez par l'API ID correct de votre type de contenu
+      uploadForm.append('refId', championId.toString());
+      uploadForm.append('field', 'image'); // Nom du champ média dans votre type de contenu
+
+      const uploadRes = await fetch('http://localhost:1337/api/upload', {
+        method: 'POST',
+        body: uploadForm
+      });
+
+      if (!uploadRes.ok) {
+        const errorText = await uploadRes.text();
+        console.error("Erreur lors de l'upload de l'image:", errorText);
+        return new Response(JSON.stringify({ error: 'Erreur upload image', details: errorText }), { status: 500 });
       }
     }
 
-    const newChampion = await response.json();
     return new Response(JSON.stringify(newChampion), {
       status: 201,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' }
     });
   } catch (err) {
-    console.error('Erreur lors de la requête POST:', err);
-    return new Response(JSON.stringify({ 
-      error: 'Erreur interne du serveur', 
-      details: err.message 
-    }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
+    console.error("Erreur serveur:", err);
+    return new Response(JSON.stringify({ error: 'Erreur serveur', details: err.message }), {
+      status: 500
     });
   }
 }

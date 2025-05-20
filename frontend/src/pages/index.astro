@@ -6,94 +6,218 @@ const url = new URL(Astro.request.url);
 const selectedRole = url.searchParams.get('role') || '';
 const champions = await fetchChampions(selectedRole);
 const roles = await fetchRoles();
-console.log('Champions récupérés :', champions);
 ---
 
 <html>
-<head>
-	<title>Champions – League of Legends</title>
-	<link rel="stylesheet" href="/src/styles/global.css">
-	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-</head>
-<body class="p-4 max-w-5xl mx-auto">
-	<h1 class="text-3xl font-bold mb-6">Liste des Champions</h1>
+  <head>
+    <title>Champions – League of Legends</title>
+    <link rel="stylesheet" href="/src/styles/global.css">
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+  </head>
+  <body class="p-4 max-w-6xl mx-auto bg-gray-50">
 
-	<form method="get" class="mb-6">
-	<label class="block mb-2 text-sm font-medium">Filtrer par rôle :</label>
-	<select name="role" class="border rounded p-2" onchange="this.form.submit()">
-		<option value="">Tous</option>
-		{roles.map(role => (
-		<option value={role.name} selected={role.name === selectedRole}>{role.name}</option>
-		))}
-	</select>
-	</form>
+    <!-- Navigation -->
+    <nav class="flex justify-between items-center mb-8 bg-white p-4 rounded shadow">
+      <h1 class="text-2xl font-bold text-blue-600">League of Legends</h1>
+      <ul class="flex space-x-4 text-gray-600 font-medium">
+        <li><a href="/" class="hover:text-blue-500">Champions</a></li>
+      </ul>
+    </nav>
 
-	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-	{champions.length > 0 ? (
-		champions.map((champ) => (
-		<ChampionCard champion={champ} />
-		))
-	) : (
-		<p>Aucun champion trouvé.</p>
-	)}
-	</div>
+    <!-- Filtre + Boutons -->
+    <div class="flex justify-between items-center mb-6 gap-4">
+      <form method="get" class="flex items-center gap-4">
+        <label class="text-sm font-medium">Filtrer par rôle :</label>
+        <select name="role" class="border rounded p-2" onchange="this.form.submit()">
+          <option value="">Tous</option>
+          {roles.map(role => (
+            <option value={role.name} selected={role.name === selectedRole}>{role.name}</option>
+          ))}
+        </select>
+      </form>
 
-	<!-- Formulaire pour ajouter un champion -->
-<form id="createChampionForm" class="mb-6 mt-[100px]">
-  <h2 class="text-2xl font-semibold mb-4">Ajouter un Champion</h2>
-  
-  <label class="block mb-2 text-sm font-medium">Nom :</label>
-  <input type="text" name="nom" id="nom" class="border rounded p-2 mb-4" required />
+      <div class="flex items-center gap-3">
+        <button 
+          id="toggleViewBtn"
+          class="bg-gray-200 text-sm px-3 py-1 rounded hover:bg-gray-300 transition"
+        >
+          Affichage: Grille
+        </button>
+        <button 
+          id="openModalBtn"
+          class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+        >
+          Ajouter un Champion
+        </button>
+        <button 
+          id="openRoleModalBtn"
+          class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+        >
+          Ajouter un Rôle
+        </button>
+      </div>
+    </div>
 
-  <label class="block mb-2 text-sm font-medium">Description :</label>
-  <textarea name="description" id="description" class="border rounded p-2 mb-4" required></textarea>
+    <!-- Vue Grille -->
+    <div 
+      id="gridContainer"
+      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 transition-all"
+    >
+      {champions.map((champ) => (
+        <ChampionCard champion={champ} view="grid" />
+      ))}
+    </div>
 
-  <label class="block mb-2 text-sm font-medium">Rôle :</label>
-  <select name="roleId" id="roleId" class="border rounded p-2 mb-4" required>
-    {roles.map(role => (
-      <option value={role.id}>{role.name}</option>
-    ))}
-  </select>
+    <!-- Vue Liste -->
+    <div 
+      id="listContainer"
+      class="flex flex-col gap-3 hidden transition-all"
+    >
+      {champions.map((champ) => (
+        <ChampionCard champion={champ} view="list" />
+      ))}
+    </div>
 
-  <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded">Ajouter Champion</button>
-</form>
+    <!-- Modale Champion -->
+    <div 
+      id="championModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50"
+    >
+      <div class="bg-white rounded-xl p-6 w-full max-w-lg relative shadow-lg">
+        <button 
+          id="closeModalBtn"
+          class="absolute top-3 right-3 text-gray-500 hover:text-red-500 text-2xl font-bold"
+        >&times;</button>
 
-<script type="module">
-  document.getElementById('createChampionForm').addEventListener('submit', async (event) => {
-    event.preventDefault(); // Empêche la soumission traditionnelle du formulaire
-    
-    const formData = new FormData(event.target);
-    const data = {
-      nom: formData.get('nom'),
-      description: formData.get('description'),
-      roleId: formData.get('roleId'), // Changé de 'role' à 'roleId'
-    };
-    
-    try {
-      const response = await fetch('/api/champions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+        <h2 class="text-2xl font-semibold mb-4">Ajouter un Champion</h2>
+        <form id="createChampionForm" enctype="multipart/form-data">
+          <label class="block mb-2 text-sm font-medium">Nom :</label>
+          <input type="text" name="nom" id="nom" class="border rounded p-2 mb-4 w-full" required />
+
+          <label class="block mb-2 text-sm font-medium">Description :</label>
+          <textarea name="description" id="description" class="border rounded p-2 mb-4 w-full" required></textarea>
+
+          <label class="block mb-2 text-sm font-medium">Image :</label>
+          <input type="file" name="image" id="image" accept="image/*" class="border rounded p-2 mb-4 w-full" />
+
+          <label class="block mb-2 text-sm font-medium">Rôle :</label>
+          <select name="roleId" id="roleId" class="border rounded p-2 mb-4 w-full" required>
+            {roles.map(role => (
+              <option value={role.id}>{role.name}</option>
+            ))}
+          </select>
+
+          <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded w-full hover:bg-blue-600">
+            Ajouter Champion
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modale Rôle -->
+    <div 
+      id="roleModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50"
+    >
+      <div class="bg-white rounded-xl p-6 w-full max-w-md relative shadow-lg">
+        <button 
+          id="closeRoleModalBtn"
+          class="absolute top-3 right-3 text-gray-500 hover:text-red-500 text-2xl font-bold"
+        >&times;</button>
+
+        <h2 class="text-xl font-semibold mb-4">Ajouter un rôle</h2>
+        <form id="createRoleForm">
+          <label class="block mb-2 text-sm font-medium">Nom du rôle :</label>
+          <input type="text" name="nom" id="roleName" class="border rounded p-2 mb-4 w-full" required />
+
+          <button type="submit" class="bg-green-500 text-white py-2 px-4 rounded w-full hover:bg-green-600">
+            Ajouter Rôle
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+      const modal = document.getElementById('championModal');
+      const openBtn = document.getElementById('openModalBtn');
+      const closeBtn = document.getElementById('closeModalBtn');
+      const toggleViewBtn = document.getElementById('toggleViewBtn');
+      const gridContainer = document.getElementById('gridContainer');
+      const listContainer = document.getElementById('listContainer');
+
+      openBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+      closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+
+      let isGrid = true;
+      toggleViewBtn.addEventListener('click', () => {
+        isGrid = !isGrid;
+        gridContainer.classList.toggle('hidden');
+        listContainer.classList.toggle('hidden');
+        toggleViewBtn.textContent = isGrid ? "Affichage: Grille" : "Affichage: Liste";
       });
-      
-      if (response.ok) {
-        alert('Champion ajouté avec succès!');
-        window.location.reload(); // Recharge la page ou redirige si nécessaire
-      } else {
-        const errorData = await response.json();
-        alert(`Erreur lors de l'ajout du champion: ${errorData.error || 'Erreur inconnue'}`);
-      }
-    } catch (error) {
-      console.error('Erreur lors de la soumission du formulaire:', error);
-      alert('Une erreur s\'est produite.');
-    }
-  });
-</script>
 
+      document.getElementById('createChampionForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        const imageFile = form.image.files[0];
+        if (imageFile) {
+          formData.set('image', imageFile);
+        }
 
+        try {
+          const response = await fetch('/api/champions', {
+            method: 'POST',
+            body: formData,
+          });
 
-</body>
+          if (response.ok) {
+            alert('Champion ajouté avec succès!');
+            window.location.reload();
+          } else {
+            const errorData = await response.json();
+            alert(`Erreur: ${errorData.error || 'Erreur inconnue'}`);
+          }
+        } catch (error) {
+          console.error('Erreur lors de l\'ajout:', error);
+          alert('Erreur réseau ou serveur');
+        }
+      });
+
+      // --- Modal Rôle ---
+      const roleModal = document.getElementById('roleModal');
+      const openRoleModalBtn = document.getElementById('openRoleModalBtn');
+      const closeRoleModalBtn = document.getElementById('closeRoleModalBtn');
+
+      openRoleModalBtn.addEventListener('click', () => roleModal.classList.remove('hidden'));
+      closeRoleModalBtn.addEventListener('click', () => roleModal.classList.add('hidden'));
+
+      document.getElementById('createRoleForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const roleName = document.getElementById('roleName').value.trim();
+
+        if (!roleName) return alert("Veuillez entrer un nom de rôle");
+
+        try {
+          const res = await fetch('/api/roles', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nom: roleName })
+          });
+
+          if (res.ok) {
+            alert('Rôle ajouté avec succès');
+            window.location.reload();
+          } else {
+            const error = await res.json();
+            alert(`Erreur: ${error.error || 'Échec de la création'}`);
+          }
+        } catch (err) {
+          console.error("Erreur lors de l'ajout du rôle:", err);
+          alert("Erreur serveur ou réseau");
+        }
+      });
+    </script>
+  </body>
 </html>
-

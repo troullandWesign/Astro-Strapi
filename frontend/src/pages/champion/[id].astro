@@ -1,10 +1,12 @@
 ---
 // src/pages/champion/[id].astro
-import { fetchChampions, fetchChampionById } from '../../lib/api';
+import { fetchChampions, fetchChampionById, fetchRoles } from '../../lib/api';
+
+// Pour le mode serveur d'Astro
+export const prerender = false;
 
 export async function getStaticPaths() {
-  const champions = await fetchChampions(); // ne passe pas de filtre ici
-
+  const champions = await fetchChampions();
   console.log("🎯 IDs récupérés pour SSG:", champions.map(c => c.id));
 
   return champions.map(champion => ({
@@ -12,12 +14,14 @@ export async function getStaticPaths() {
   }));
 }
 
-
 // Récupération du paramètre d'URL
 const { id } = Astro.params;
 
 // Récupération des données du champion
 const champion = await fetchChampionById(id);
+
+// Récupération de tous les rôles disponibles
+const allRoles = await fetchRoles();
 
 // Gestion des erreurs: redirection si le champion n'existe pas
 if (!champion) {
@@ -61,19 +65,35 @@ const altText = champion.image?.alternativeText || champion.nom;
           <h1 class="text-3xl font-bold mb-2">{champion.nom}</h1>
           
           {champion.roles?.length > 0 && (
-            <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mb-4">
-              {champion.roles[0].nom}
-            </span>
+            <div class="mb-4">
+              {champion.roles.map(role => (
+                <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mr-2">
+                  {role.nom}
+                </span>
+              ))}
+            </div>
           )}
           
           <div class="prose max-w-none">
             <h2 class="text-xl font-semibold mt-4">Description</h2>
             <p class="text-gray-700">{champion.description}</p>
-            
+            <div class="mt-6 flex gap-4">
+              <button 
+                id="editBtn" 
+                class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+                Modifier
+              </button>
+              <button 
+                id="deleteBtn" 
+                class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                Supprimer
+              </button>
+            </div>
             <div class="mt-6">
               <h2 class="text-xl font-semibold">Informations</h2>
               <ul class="mt-2 space-y-1 text-gray-600">
                 <li><span class="font-medium">ID:</span> {champion.id}</li>
+                <li><span class="font-medium">Document ID:</span> {champion.documentId}</li>
                 <li><span class="font-medium">Ajouté le:</span> {new Date(champion.createdAt).toLocaleDateString()}</li>
                 <li><span class="font-medium">Mis à jour le:</span> {new Date(champion.updatedAt).toLocaleDateString()}</li>
               </ul>
@@ -82,5 +102,193 @@ const altText = champion.image?.alternativeText || champion.nom;
         </div>
       </div>
     </div>
+
+    <!-- Modal d'édition -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl">
+        <h2 class="text-2xl font-bold mb-4">Modifier le champion</h2>
+        <form id="editForm" class="space-y-4">
+          <div>
+            <label for="nom" class="block text-sm font-medium text-gray-700">Nom</label>
+            <input type="text" id="nom" name="nom" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" value={champion.nom}>
+          </div>
+          <div>
+            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+            <textarea id="description" name="description" rows="4" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">{champion.description}</textarea>
+          </div>
+          <div>
+            <label for="roles" class="block text-sm font-medium text-gray-700">Rôles</label>
+            <select id="roles" name="roles" multiple class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+              {allRoles.map(role => (
+                <option 
+                  value={role.id} 
+                  selected={champion.roles?.some(r => r.id === role.id)}
+                >
+                  {role.name}
+                </option>
+              ))}
+            </select>
+            <p class="text-xs text-gray-500 mt-1">Maintenez Ctrl (ou Cmd) pour sélectionner plusieurs rôles</p>
+          </div>
+          <div>
+            <label for="image" class="block text-sm font-medium text-gray-700">Image</label>
+            <input type="file" id="image" name="image" accept="image/*" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+            {imageUrl && (
+              <div class="mt-2">
+                <p class="text-sm text-gray-500">Image actuelle:</p>
+                <div class="mt-1 w-24 h-24 relative">
+                  <img src={imageUrl} alt={altText} class="w-full h-full object-cover rounded">
+                </div>
+              </div>
+            )}
+          </div>
+          <div class="flex justify-end gap-2">
+            <button type="button" id="cancelEdit" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Annuler</button>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Passer les données du champion au script côté client -->
+    <script define:vars={{ champion, allRoles }}>
+      console.log("Champion data:", champion);
+      console.log("Roles disponibles:", allRoles);
+      
+      // Gestion du modal d'édition
+      const editModal = document.getElementById("editModal");
+      const editForm = document.getElementById("editForm");
+      const editBtn = document.getElementById("editBtn");
+      const cancelEdit = document.getElementById("cancelEdit");
+      
+      // Ouvrir le modal d'édition
+      editBtn.addEventListener("click", () => {
+        // Pré-remplir tous les champs du formulaire
+        document.getElementById("nom").value = champion.nom;
+        document.getElementById("description").value = champion.description || "";
+        
+        // Sélectionner les rôles actuels dans le select multiple
+        const rolesSelect = document.getElementById("roles");
+        if (rolesSelect && champion.roles) {
+          Array.from(rolesSelect.options).forEach(option => {
+            option.selected = champion.roles.some(role => role.id.toString() === option.value);
+          });
+        }
+        
+        // Afficher le modal
+        editModal.classList.remove("hidden");
+      });
+      
+      // Fermer le modal
+      cancelEdit.addEventListener("click", () => {
+        editModal.classList.add("hidden");
+      });
+      
+      // Soumission du formulaire d'édition
+      editForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        // Préparation des données de base
+        const nom = document.getElementById("nom").value;
+        const description = document.getElementById("description").value;
+        
+        // Récupération des rôles sélectionnés
+        const rolesSelect = document.getElementById("roles");
+        const selectedRoles = Array.from(rolesSelect.selectedOptions).map(option => ({
+          id: parseInt(option.value),
+          name: option.textContent.trim()
+        }));
+        
+        // Construction des données à envoyer
+        const updatedData = {
+          nom,
+          description,
+          roles: selectedRoles
+        };
+        
+        // Gestion de l'image si présente
+        const imageInput = document.getElementById("image");
+        const hasNewImage = imageInput.files && imageInput.files.length > 0;
+        
+        try {
+          // Si une nouvelle image est sélectionnée, il faut d'abord l'uploader
+          if (hasNewImage) {
+            const formData = new FormData();
+            formData.append('file', imageInput.files[0]); // Utilise 'file' au lieu de 'files'
+            
+            console.log("Envoi de l'image via le proxy...");
+            const uploadResponse = await fetch('/api/upload', {  // Utilise notre endpoint proxy
+              method: 'POST',
+              body: formData
+            });
+            
+            if (!uploadResponse.ok) {
+              const errorData = await uploadResponse.json().catch(() => ({ error: `${uploadResponse.status}: ${uploadResponse.statusText}` }));
+              throw new Error(`Erreur d'upload d'image: ${errorData.error || uploadResponse.status}`);
+            }
+            
+            const uploadResult = await uploadResponse.json();
+            console.log("Image uploadée avec succès:", uploadResult);
+            
+            // Ajouter l'ID de l'image aux données à mettre à jour
+            if (uploadResult && uploadResult.length > 0) {
+              updatedData.image = uploadResult[0].id;
+            }
+          }
+          
+          console.log(`Envoi d'une requête PUT à /api/champion/${champion.documentId}`, updatedData);
+          const response = await fetch(`/api/champion/${champion.documentId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updatedData),
+          });
+
+          console.log("Réponse de mise à jour:", response);
+
+          if (response.ok) {
+            // CORRECTION ICI: Stocker l'ID numérique du champion pour la redirection
+            const numericId = champion.id;
+            
+            alert("Champion mis à jour avec succès !");
+            
+            // CORRECTION: S'assurer que l'ID utilisé pour la redirection est correct
+            window.location.href = `/champion/${numericId}`;
+          } else {
+            const errorData = await response.json().catch(() => ({ error: `${response.status}: ${response.statusText}` }));
+            alert(`Erreur lors de la mise à jour: ${errorData.error || response.statusText}`);
+          }
+        } catch (error) {
+          console.error("Erreur:", error);
+          alert(`Erreur lors de la mise à jour: ${error.message}`);
+        }
+      });
+
+      // Suppression du champion
+      document.getElementById("deleteBtn").addEventListener("click", async () => {
+        if (!confirm(`Supprimer ce champion ?`)) return;
+
+        try {
+          console.log(`Envoi d'une requête DELETE à /api/champion/${champion.documentId}`);
+          const response = await fetch(`/api/champion/${champion.documentId}`, {
+            method: 'DELETE'
+          });
+
+          console.log("Réponse de suppression:", response);
+
+          if (response.ok) {
+            alert("Champion supprimé avec succès !");
+            window.location.href = "/";
+          } else {
+            const errorData = await response.json().catch(() => ({ error: `${response.status}: ${response.statusText}` }));
+            alert(`Erreur lors de la suppression: ${errorData.error || response.statusText}`);
+          }
+        } catch (error) {
+          console.error("Erreur:", error);
+          alert(`Erreur lors de la suppression: ${error.message}`);
+        }
+      });
+    </script>
   </body>
 </html>

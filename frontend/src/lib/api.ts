@@ -115,7 +115,7 @@ export async function fetchRoles() {
   }
 }
 
-export async function createChampion(data: { nom: string, description: string, role: string }) {
+export async function createChampion(data: { nom: string, description: string, role: string, imageId: string | null }) {
   try {
     const res = await fetch(`${API_URL}/champions`, {
       method: 'POST',
@@ -127,6 +127,12 @@ export async function createChampion(data: { nom: string, description: string, r
           nom: data.nom,
           description: data.description,
           roles: [{ name: data.role }],
+          // Inclure l'image seulement si un imageId est présent
+          ...(data.imageId && {
+            image: {
+              connect: [{ id: data.imageId }],
+            }
+          })
         },
       }),
     });
@@ -141,5 +147,64 @@ export async function createChampion(data: { nom: string, description: string, r
   } catch (err) {
     console.error('Erreur createChampion:', err);
     return null;
+  }
+}
+
+
+export async function updateChampion(documentId, data) {
+  try {
+    console.log(`🔄 Mise à jour du champion avec documentId: ${documentId}`, data);
+    
+    // Préparation des données pour Strapi V5
+    const requestBody = {
+      data: {
+        ...data
+      }
+    };
+    
+    // Notez bien l'URL avec le documentId
+    const res = await fetch(`${API_URL}/champions/${documentId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `${res.status}: ${res.statusText}` }));
+      console.error(`Erreur HTTP ${res.status}: ${res.statusText}`, errorData);
+      throw new Error(`Erreur HTTP ${res.status}: ${res.statusText}`);
+    }
+    
+    const json = await res.json();
+    console.log("✅ Champion mis à jour avec succès:", json);
+    return json;
+  } catch (error) {
+    console.error("❌ Erreur updateChampion:", error);
+    throw error; // Propager l'erreur pour une meilleure gestion
+  }
+}
+
+
+export async function deleteChampion(documentId) {
+  try {
+    console.log(`🗑️ Suppression du champion avec documentId: ${documentId}`);
+    
+    const res = await fetch(`${API_URL}/champions/${documentId}`, {
+      method: 'DELETE',
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `${res.status}: ${res.statusText}` }));
+      console.error(`Erreur HTTP ${res.status}: ${res.statusText}`, errorData);
+      throw new Error(`Erreur HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    console.log("✅ Champion supprimé avec succès");
+    return true;
+  } catch (error) {
+    console.error("❌ Erreur deleteChampion:", error);
+    throw error; // Propager l'erreur pour une meilleure gestion
   }
 }
