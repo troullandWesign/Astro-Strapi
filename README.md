@@ -141,7 +141,7 @@ Site statique dynamique généré via Astro avec récupération des données dep
    npm -v
    ```
 
-   Si tu n’as pas `Node.js` installé, ou si la version n’est pas correcte, tu peux utiliser [nvm](https://github.com/nvm-sh/nvm) pour gérer les versions de Node.js. Si tu n’as pas `nvm`, tu peux l'installer avec :
+   Si tu n’as pas `Node.js` installé, ou si la version n’est pas correcte, tu peux utiliser [nvm](https://github.com/nvm-sh/nvm) pour gérer les versions de Node.js (Pas obligatoire, passe avec la version 22 de node). Si tu n’as pas `nvm`, tu peux l'installer avec :
 
    ```bash
    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
