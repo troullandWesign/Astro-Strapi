@@ -174,7 +174,7 @@ Site statique dynamique généré via Astro avec récupération des données dep
 
    Une fois le serveur démarré, remplace le fichier `database.db` existant dans le dossier `backend/.tmp` par la base de données (`database.db`) a la racine du git. Cela permettra à Strapi de fonctionner avec ma base de données. Une fois le fichier remplacer relance la commande `npm run develop`.
 
-7. **Accéder à l'interface d'administration de Strapi**
+7. **Accéder à l'interface d'administration de Strapi (OPTIONNEL, peut passer à l'étape FRONTEND. Sert juste si on veut faire modification dans les modeles)**
 
    Ouvre un navigateur et va à l'URL suivante pour accéder à l'interface d'administration de Strapi : [http://localhost:1337/admin](http://localhost:1337/admin)
 
