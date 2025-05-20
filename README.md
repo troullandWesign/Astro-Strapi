@@ -102,47 +102,165 @@ Site statique dynamique généré via Astro avec récupération des données dep
 - `PUT /champions/{id}` : Modifie un champion existant
 - `DELETE /champions/{id}` : Supprime un champion
 
-## Manuel d'Installation
+---
 
-### Backend (Strapi)
-
-1. Installer Strapi :
-   ```bash
-   npx create-strapi-app my-project --quickstart
-
-
-### Exemple de fetch Astro :
-```js
-const res = await fetch('http://localhost:1337/api/champions?populate=role,image');
-const data = await res.json();
-````
-
-## 📘 5. Manuel d’Installation
+## 📘 Manuel d'Installation
 
 ### 🔧 Backend – Strapi
 
-```bash
-cd backend
-npm install
-npm run develop
-# Interface admin : http://localhost:1337/admin
-```
+1. **Vérification de Git et clonage du projet**
 
-Assure-toi que le content-type "Champion" a bien les champs :
+   Vérifie d'abord que `git` est installé. Pour cela, tape la commande suivante dans le terminal :
 
-* nom
-* description
-* image
-* relation avec "Role"
+   ```bash
+   git --version
+   ```
+
+   Si `git` est installé, passe à l'étape suivante. Sinon, installe-le depuis [Git](https://git-scm.com/).
+
+   Si tout est bon, clone le repository du projet :
+
+   ```bash
+   git clone https://github.com/troullandWesign/Astro-Strapi.git
+   ```
+
+2. **Accéder au dossier backend**
+
+   Une fois le projet cloné, rends-toi dans le répertoire `backend` :
+
+   ```bash
+   cd Astro-Strapi/backend
+   ```
+
+3. **Vérification de Node.js et NPM**
+
+   Vérifie si `node` et `npm` sont installés, et que la version de Node.js est compatible (v18.17.1, v20.3.0, ou v22.0.0). Pour cela, utilise ces commandes :
+
+   ```bash
+   node -v
+   npm -v
+   ```
+
+   Si tu n’as pas `Node.js` installé, ou si la version n’est pas correcte, tu peux utiliser [nvm](https://github.com/nvm-sh/nvm) pour gérer les versions de Node.js. Si tu n’as pas `nvm`, tu peux l'installer avec :
+
+   ```bash
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+   ```
+
+   Après avoir installé `nvm`, tu peux installer la version correcte de Node.js si tu préfères la 20 avec :
+
+   ```bash
+   nvm install 20.3.0
+   nvm use 20.3.0
+   ```
+
+4. **Installation des dépendances**
+
+   Installe les dépendances du backend avec :
+
+   ```bash
+   npm install
+   ```
+
+5. **Lancer le serveur Strapi**
+
+   Lance le serveur en mode développement :
+
+   ```bash
+   npm run develop
+   ```
+
+6. **Importer la base de données**
+
+   Une fois le serveur démarré, remplace le fichier `database.db` existant dans le dossier `backend` par ta propre base de données (`database.db`). Cela permettra à Strapi de fonctionner avec ta base de données.
+
+7. **Accéder à l'interface d'administration de Strapi**
+
+   Ouvre un navigateur et va à l'URL suivante pour accéder à l'interface d'administration de Strapi : [http://localhost:1337/admin](http://localhost:1337/admin)
+
+   Pour te connecter, utilise les identifiants suivants :
+
+   * **Email** : `roulland.thomass@gmail.com`
+   * **Mot de passe** : `Tintin1998!`
+
+8. **Vérification du content-type "Champion"**
+
+   Assure-toi que le content-type "Champion" contient bien les champs suivants :
+
+   * **Nom**
+   * **Description**
+   * **Image**
+   * **Relation avec "Role"**
+
+---
 
 ### 🌐 Frontend – Astro
 
-```bash
-cd frontend
-npm install
-npm run dev
-# Site visible sur : http://localhost:1337
-```
+1. **Accéder au dossier frontend**
+
+   Une fois que le backend est en place, passe au frontend. Dans le dossier racine du projet, rends-toi dans le répertoire `frontend` :
+
+   ```bash
+   cd frontend
+   ```
+
+2. **Vérification de la version de Node.js**
+
+   Vérifie que tu utilises bien la version recommandée de Node.js (v20.3.0 ou v22.0.0) en utilisant la commande suivante :
+
+   ```bash
+   node -v
+   ```
+
+   Si tu as besoin de changer de version de Node.js, utilise à nouveau `nvm` pour installer la version souhaitée, puis active-la :
+
+   ```bash
+   nvm install 20.3.0
+   nvm use 20.3.0
+   ```
+
+3. **Installation des dépendances**
+
+   Installe les dépendances du frontend avec :
+
+   ```bash
+   npm install
+   ```
+
+4. **Lancer le serveur Astro**
+
+   Lance le serveur de développement pour le frontend :
+
+   ```bash
+   npm run dev
+   ```
+
+5. **Accéder à l'application frontend**
+
+   Une fois le serveur démarré, tu peux accéder à ton site frontend à l'adresse suivante : [http://localhost:4321](http://localhost:4321)
+
+---
+
+### ✅ Récapitulatif des étapes
+
+1. **Backend (Strapi)** :
+
+   * Cloner le repository
+   * Vérifier la version de Node.js
+   * Installer les dépendances avec `npm install`
+   * Lancer le serveur avec `npm run develop`
+   * Importer la base de données
+   * Vérifier le content-type "Champion"
+   * Se connecter à Strapi avec les identifiants
+
+2. **Frontend (Astro)** :
+
+   * Vérifier la version de Node.js
+   * Installer les dépendances avec `npm install`
+   * Lancer le serveur avec `npm run dev`
+   * Accéder au site frontend
+
+---
 
 ## 🧩 6. Code Source
 
